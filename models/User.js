@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const UserSchema = mongoose.schema({
+const UserSchema = mongoose.Schema({
   email: {
     type: String,
     unique: true,
