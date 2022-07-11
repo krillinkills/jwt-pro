@@ -3,6 +3,12 @@ const app = express();
 const createErrors = require('http-errors');
 require('dotenv').config();
 const authRoute = require('./routes/Auth.routes');
+const morgan = require('morgan');
+require('./helpers/init_mongo');
+
+//helpers
+app.use(morgan());
+app.use(express.json());
 
 app.use('/auth', authRoute);
 
