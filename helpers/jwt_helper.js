@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const createError = require('http-errors');
 
 module.exports = {
   signInAccessToken: async (userId) => {
@@ -12,6 +13,26 @@ module.exports = {
       return { token };
     } catch (err) {
       return { err };
+    }
+  },
+
+  verifyAccessToken: async (req, res, next) => {
+    try {
+      if (!req.headers.authorizarion) return next(createError.unauthorized());
+      const authHeader = req.headers.authorizarion;
+      const bearerToken = authHeader.split(' ');
+      const token = bearerToken[1];
+
+      const payload = await jwt.verify(token, process.env.ACCESSTOKEN);
+      req.payload = payload;
+      next();
+    } catch (error) {
+      if (
+        error.name === 'TokenExpiredError' ||
+        error.name === 'JasonWebTokenError'
+      )
+        error.status = 401;
+      next(error);
     }
   },
 };

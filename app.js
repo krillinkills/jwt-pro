@@ -4,13 +4,20 @@ const createErrors = require('http-errors');
 require('dotenv').config();
 const authRoute = require('./routes/Auth.routes');
 const morgan = require('morgan');
+const { verifyAccessToken } = require('./helpers/jwt_helper');
 require('./helpers/init_mongo');
 
 //helpers
 app.use(morgan());
 app.use(express.json());
 
+//auth route
 app.use('/auth', authRoute);
+
+//Home
+app.get('/home', verifyAccessToken, (req, res) => {
+  res.send({ msg: req.payload });
+});
 
 //not found
 app.use((req, res, next) => {
