@@ -3,7 +3,10 @@ const router = express.Router();
 const createError = require('http-errors');
 const User = require('../models/User');
 const { authSchema, loginSchema } = require('../helpers/authSchema');
-const { signInAccessToken } = require('../helpers/jwt_helper');
+const {
+  signInAccessToken,
+  signInRefreshToken,
+} = require('../helpers/jwt_helper');
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -23,13 +26,16 @@ router.post('/register', async (req, res, next) => {
     const savedUser = await user.save();
 
     //jwt sign in
-    const token = await signInAccessToken(savedUser._id);
+    const { Aerror, accesstoken } = await signInAccessToken(savedUser._id);
+    const { Rerror, refreshtoken } = await signInRefreshToken(savedUser._id);
 
-    if (error) throw createError.NotImplemented();
+    if (Aerror || Rerror) throw createError.NotImplemented();
 
-    res.status(201).send(token);
+    res
+      .status(201)
+      .send({ accesstoken: accesstoken, refreshtoken: refreshtoken });
   } catch (error) {
-    if (error.isjoi === true) error.status = 422;
+    if (error.isJoi === true) error.status = 422;
     next(error);
   }
 });
@@ -48,15 +54,18 @@ router.post('/login', async (req, res, next) => {
     if (!matched) throw createError.Unauthorized('username/Password incorrect');
 
     //JWT SIGNIN
-    const { error, token } = await signInAccessToken(user._id);
-    if (error) throw createError.InternalServerError();
+    const { accesserror, accesstoken } = await signInAccessToken(user._id);
+    const { refresherror, refreshtoken } = await signInRefreshToken(user._id);
+    if (accesserror || refresherror) throw createError.InternalServerError();
 
-    res.status(201).send({ token: token });
+    res
+      .status(200)
+      .send({ accesstoken: accesstoken, refreshtoken: refreshtoken });
 
     res.send(user);
     //
   } catch (error) {
-    if (error.isjoi === true) error.status = 422;
+    if (error.isJoi === true) error.status = 422;
     next(error);
   }
 });

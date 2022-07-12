@@ -4,15 +4,30 @@ const createError = require('http-errors');
 module.exports = {
   signInAccessToken: async (userId) => {
     try {
-      const payload = { id: String(userId), iss: 'ypurdomain.com' }; //giving id and issuer in jwt object
+      const payload = { id: String(userId), iss: 'yourdomain.com' }; //giving id and issuer in jwt object
       const secret = process.env.ACCESSTOKEN;
       const options = { expiresIn: '1h' }; //expiration time
 
       //create a jwt token
-      const token = await jwt.sign(payload, secret, options);
-      return { token };
-    } catch (err) {
-      return { err };
+      const accesstoken = await jwt.sign(payload, secret, options);
+      return { accesstoken };
+    } catch (accesserror) {
+      return { accesserror };
+    }
+  },
+  signInRefreshToken: async (userId) => {
+    try {
+      const payload = {};
+      const secret = process.env.REFRESHTOKEN;
+      const options = {
+        expiresIn: '1y',
+        iss: 'yourdomain@domain.com',
+        audience: String(userId),
+      };
+      const refreshtoken = await jwt.sign(payload, secret, options);
+      return { refreshtoken };
+    } catch (refresherror) {
+      return { refresherror };
     }
   },
 
