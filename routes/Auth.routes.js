@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const createError = require('http-errors');
 const User = require('../models/User');
-const authSchema = require('../helpers/authSchema');
+const { authSchema, loginSchema } = require('../helpers/authSchema');
 const { signInAccessToken } = require('../helpers/jwt_helper');
 
 router.post('/register', async (req, res, next) => {
@@ -28,14 +28,37 @@ router.post('/register', async (req, res, next) => {
     if (error) throw createError.NotImplemented();
 
     res.status(201).send(token);
-  } catch {
-    if (error.usjoi === true) error.status = 422;
+  } catch (error) {
+    if (error.isjoi === true) error.status = 422;
     next(error);
   }
 });
 
-router.post('/login', (req, res) => {
-  res.send('login');
+//LOGIN
+router.post('/login', async (req, res, next) => {
+  try {
+    const results = await loginSchema.validateAsync(req.body); //validates the schema
+
+    const user = await User.findOne({ email: results.email }); //checking if user exists
+    if (!user) throw createError.NotFound('username/Password incorrect');
+
+    //comparing pass
+    const matched = await user.isValidPassword(results.password);
+
+    if (!matched) throw createError.Unauthorized('username/Password incorrect');
+
+    //JWT SIGNIN
+    const { error, token } = await signInAccessToken(user._id);
+    if (error) throw createError.InternalServerError();
+
+    res.status(201).send({ token: token });
+
+    res.send(user);
+    //
+  } catch (error) {
+    if (error.isjoi === true) error.status = 422;
+    next(error);
+  }
 });
 
 router.post('/refresh', (req, res) => {
