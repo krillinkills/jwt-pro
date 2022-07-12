@@ -2,12 +2,15 @@ const express = require('express');
 const router = express.Router();
 const createError = require('http-errors');
 const User = require('../models/User');
+const authSchema = require('../helpers/authSchema');
 
 router.post('/register', async (req, res, next) => {
   try {
-    //check if email and pass present
-    const { email, body } = req.body;
-    if (!email || !password) throw createError.BadRequest();
+    //validating data
+    await authSchema.validateAsync(req.body);
+
+    //Extracting email pass
+    const { email, password } = req.body;
 
     //check if user registered
     const userExists = await User.findOne({ email: email });
@@ -19,6 +22,7 @@ router.post('/register', async (req, res, next) => {
     const savedUser = await user.save();
     res.status(201).send(savedUser);
   } catch {
+    if (error.usjoi === true) error.status = 422;
     next(error);
   }
 });
