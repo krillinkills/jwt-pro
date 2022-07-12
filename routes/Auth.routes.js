@@ -6,6 +6,7 @@ const { authSchema, loginSchema } = require('../helpers/authSchema');
 const {
   signInAccessToken,
   signInRefreshToken,
+  verifyRefreshToken,
 } = require('../helpers/jwt_helper');
 
 router.post('/register', async (req, res, next) => {
@@ -70,8 +71,26 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-router.post('/refresh', (req, res) => {
-  res.send('refresh Token');
+//REFRESH ROUTE
+router.post('/refresh', async (req, res, next) => {
+  try {
+    //validate
+    const { refresh_token } = req.body;
+    if (!refreshtoken) throw createError.BadRequest('token not found');
+    //verify
+    const { error, userId } = await verifyRefreshToken(refresh_token);
+    if (error) throw createError.BadRequest();
+    //signing with userId
+    const { accesserror, accesstoken } = await signInAccessToken(userId);
+    const { refresherror, refreshtoken } = await signInRefreshToken(userId);
+    if (accesserror || refresherror) throw createError.InternalServerError();
+
+    return res
+      .status(200)
+      .send({ accesstoken: accesstoken, refreshtoken: refreshtoken });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.delete('/delete', (req, res) => {

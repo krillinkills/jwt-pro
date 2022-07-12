@@ -15,6 +15,7 @@ module.exports = {
       return { accesserror };
     }
   },
+
   signInRefreshToken: async (userId) => {
     try {
       const payload = {};
@@ -48,6 +49,15 @@ module.exports = {
       )
         error.status = 401;
       next(error);
+    }
+  },
+  verifyRefreshToken: async (refreshtoken) => {
+    try {
+      const payload = await jwt.verify(refreshtoken, process.env.REFRESHTOKEN);
+      const userId = payload.aud;
+      return { userId };
+    } catch (error) {
+      return error;
     }
   },
 };
