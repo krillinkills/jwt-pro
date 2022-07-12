@@ -3,6 +3,7 @@ const router = express.Router();
 const createError = require('http-errors');
 const User = require('../models/User');
 const authSchema = require('../helpers/authSchema');
+const { signInAccessToken } = require('../helpers/jwt_helper');
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -20,7 +21,13 @@ router.post('/register', async (req, res, next) => {
     //Savig in DB
     const user = new User({ email: email, password: password });
     const savedUser = await user.save();
-    res.status(201).send(savedUser);
+
+    //jwt sign in
+    const token = await signInAccessToken(savedUser._id);
+
+    if (error) throw createError.NotImplemented();
+
+    res.status(201).send(token);
   } catch {
     if (error.usjoi === true) error.status = 422;
     next(error);
