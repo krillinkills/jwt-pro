@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
+const client = require('../helpers/init_redis');
 
 module.exports = {
   signInAccessToken: async (userId) => {
@@ -26,6 +27,7 @@ module.exports = {
         audience: String(userId),
       };
       const refreshtoken = await jwt.sign(payload, secret, options);
+      await client.SET(String(userId), refreshtoken, 'EX', 365 * 24 * 60 * 60);
       return { refreshtoken };
     } catch (refresherror) {
       return { refresherror };
@@ -55,6 +57,8 @@ module.exports = {
     try {
       const payload = await jwt.verify(refreshtoken, process.env.REFRESHTOKEN);
       const userId = payload.aud;
+      const res = await client.GET(userId);
+      if (res === refreshtoken) throw createError.unauthorized();
       return { userId };
     } catch (error) {
       return error;
